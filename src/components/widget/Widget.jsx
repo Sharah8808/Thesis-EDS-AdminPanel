@@ -1,23 +1,20 @@
 import "./widget.scss";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
-import { useState } from "react";
 
 const Widget = ({ type }) => {
-  const [amount, setAmount] = useState(null)
-  const [diff, setDiff] = useState(null)
-
+  const [amount, setAmount] = useState(null);
+  const [diff, setDiff] = useState(null);
   let data;
 
-  //temporary
-  // const amount = 100;
-  // const diff = 20;
+  console.log(type)
 
   switch (type) {
     case "user":
@@ -66,10 +63,10 @@ const Widget = ({ type }) => {
         ),
       };
       break;
-    case "product":
+    case "products":
       data = {
-        title: "PRODUCT",
-        query: "products",
+        title: "PRODUCTS",
+        query:"products",
         link: "See details",
         icon: (
           <AccountBalanceWalletOutlinedIcon
@@ -83,36 +80,51 @@ const Widget = ({ type }) => {
       };
       break;
     default:
+      // data = {
+      //   title: "PRODUCTS",
+      //   query:"products",
+      //   link: "See details",
+      //   icon: (
+      //     <AccountBalanceWalletOutlinedIcon
+      //       className="icon"
+      //       style={{
+      //         backgroundColor: "rgba(128, 0, 128, 0.2)",
+      //         color: "purple",
+      //       }}
+      //     />
+      //   ),
+      // };
       break;
   }
 
-  useEffect(()=>{
-    const fetchData = async()=>{
+  useEffect(() => {
+    const fetchData = async () => {
       const today = new Date();
-      const lastMonth = new Date(new Date().setMonth(today.getMonth() - 1))
-      const preMonth = new Date(new Date().setMonth(today.getMonth() - 2))
-
-      console.log(preMonth)
+      const lastMonth = new Date(new Date().setMonth(today.getMonth() - 1));
+      const prevMonth = new Date(new Date().setMonth(today.getMonth() - 2));
 
       const lastMonthQuery = query(
-        collection(db, "users"), 
-        where("timeStamp", "<=", today), 
+        collection(db, data.query),
+        where("timeStamp", "<=", today),
         where("timeStamp", ">", lastMonth)
       );
-      const preMonthQuery = query(
-        collection(db, "users"), 
-        where("timeStamp", "<=", lastMonth), 
-        where("timeStamp", ">", preMonth)
+      const prevMonthQuery = query(
+        collection(db, data.query),
+        where("timeStamp", "<=", lastMonth),
+        where("timeStamp", ">", prevMonth)
       );
 
-      const lastMonthData = await getDocs(lastMonthQuery)
-      const preMonthData = await getDocs(preMonthQuery)
+      const lastMonthData = await getDocs(lastMonthQuery);
+      const prevMonthData = await getDocs(prevMonthQuery);
 
       setAmount(lastMonthData.docs.length);
-      setDiff(((lastMonthData.docs.length - preMonthData.docs.length) / preMonthData.docs.length ) * 100);
-    }
-    fetchData()
-  },[])
+      setDiff(
+        ((lastMonthData.docs.length - prevMonthData.docs.length) / prevMonthData.docs.length) *
+          100
+      );
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="widget">
@@ -124,8 +136,8 @@ const Widget = ({ type }) => {
         <span className="link">{data.link}</span>
       </div>
       <div className="right">
-        <div className="percentage positive">
-          <KeyboardArrowUpIcon />
+        <div className={`percentage ${diff < 0 ? "negative" : "positive"}`}>
+          {diff < 0 ? <KeyboardArrowDownIcon/> : <KeyboardArrowUpIcon/> }
           {diff} %
         </div>
         {data.icon}
@@ -133,5 +145,7 @@ const Widget = ({ type }) => {
     </div>
   );
 };
+
+//doremifasolasidoo
 
 export default Widget;
